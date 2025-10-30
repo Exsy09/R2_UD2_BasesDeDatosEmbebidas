@@ -6,42 +6,39 @@ public class ContadorEnBD {
 
 	public static void main(String[] args) {
 		final String sqlConsulta = "SELECT cuenta FROM contadores WHERE nombre=?;";
-		final String sqlActualización = "UPDATE contadores SET cuenta=? WHERE nombre=?;";
+		final String sqlActualizacion = "UPDATE contadores SET cuenta=? WHERE nombre=?;";
 		final String claveContador = "contador1";
 
-		try {
-            Class.forName("org.sqlite.JDBC");
+		String url = "jdbc:derby:contadoresDB;create=true";
 
-//			Connection connection = DriverManager.getConnection("jdbc:mariadb://localhost:3306/contadores",
-//					"contadores", "987654321");
-            Connection connection = DriverManager.getConnection("jdbc:sqlite:/home/alumno/bbdd/sqlite/contadores.db");
+		try (Connection connection = DriverManager.getConnection(url)) {
+			connection.setAutoCommit(false);
 
-            PreparedStatement consulta = connection.prepareStatement(sqlConsulta);
-			PreparedStatement actualización = connection.prepareStatement(sqlActualización);
+			PreparedStatement consulta = connection.prepareStatement(sqlConsulta);
+			PreparedStatement actualizacion = connection.prepareStatement(sqlActualizacion);
 			int cuenta = 0;
 
 			consulta.setString(1, claveContador);
-			actualización.setString(2, claveContador);
+			actualizacion.setString(2, claveContador);
+
 			for (int i = 0; i < 1000; i++) {
 				ResultSet res = consulta.executeQuery();
 				if (res.next()) {
 					cuenta = res.getInt(1) + 1;
-					actualización.setInt(1, cuenta);
-					actualización.executeUpdate();
+					actualizacion.setInt(1, cuenta);
+					actualizacion.executeUpdate();
+					connection.commit();
+				} else {
+					System.out.println("Error: contador no encontrado");
 				}
-				// else break;
-				else
-					System.out.println("Error");
-				// if (i%10==0) System.out.println(i/10 + "%");
 			}
 			System.out.println("Valor final: " + cuenta);
 
-		} // try
-		catch (SQLException e) {
-			System.out.println(e.getMessage());
+		} catch (SQLException e) {
+			System.out.println("Error SQL: " + e.getMessage());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-	} // main
+	}
 
-} // class
+}

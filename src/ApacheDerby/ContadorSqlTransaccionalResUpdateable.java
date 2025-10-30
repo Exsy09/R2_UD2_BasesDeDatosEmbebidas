@@ -7,39 +7,44 @@ import java.sql.ResultSet;
 
 public class ContadorSqlTransaccionalResUpdateable {
 
-	public static void main(String[] args) throws ClassNotFoundException {
+	public static void main(String[] args) {
 		// Prueba de concepto de transacción con bloqueo de fila para lectura
 		// Sería más fácil en el propio sql poner un set cuenta=cuenta+1 pero ilustramos
 		// aquí el problema de concurrencia entre varios procesos.
 		// con el for update + transacción conseguimos el bloque de fila y atomicidad
-		String sqlConsulta = "select nombre,cuenta from contadores where nombre='contador1' for update;";
-		
-		Class.forName("org.mariadb.jdbc.Driver");
-		
-		try (Connection connection = DriverManager.getConnection(
-				"jdbc:mariadb://localhost:3306/contadores?allowPublicKeyRetrieval=true", "contadores", "987654321"))
-		{
-			PreparedStatement consulta = connection.prepareStatement(sqlConsulta,ResultSet.FETCH_FORWARD,
-																			ResultSet.CONCUR_UPDATABLE);
+
+		String sqlConsulta = "SELECT nombre, cuenta FROM contadores WHERE nombre='contador1' FOR UPDATE";
+		String url = "jdbc:derby:contadoresDB;create=true"; // Base de datos Derby embebida
+
+		try (Connection connection = DriverManager.getConnection(url)) {
+			connection.setAutoCommit(false); // Control manual de transacciones
+
+			// Se crea un ResultSet updatable
+			PreparedStatement consulta = connection.prepareStatement(
+					sqlConsulta,
+					ResultSet.TYPE_FORWARD_ONLY,
+					ResultSet.CONCUR_UPDATABLE
+			);
+
 			int cuenta = 0;
-			
-			for (int i=0; i<1000; i++) {
-				connection.setAutoCommit(false);
-				ResultSet res = consulta.executeQuery();
+
+			for (int i = 0; i < 1000; i++) {
+				ResultSet res = consulta.executeQuery(); // Ejecuta la consulta con bloqueo de fila
 				if (res.next()) {
-					cuenta = res.getInt(2);
-					cuenta++;
-					// Exije que nombre sea clave primaria !!!!
-					res.updateInt(2, cuenta);
-					res.updateRow();
+					cuenta = res.getInt(2) + 1;  // Incrementa el contador
+					res.updateInt(2, cuenta);    // Actualiza el valor en el ResultSet
+					res.updateRow();             // Refleja el cambio en la base de datos
+				} else {
+					System.out.println("Error: contador no encontrado");
+					break;
 				}
-				else break;
-				connection.commit();
-				connection.setAutoCommit(false);
-			} // for
+				connection.commit(); // Confirmar cada incremento
+			}
+
 			System.out.println("Valor final: " + cuenta);
+
 		} catch (Exception e) {
 			e.printStackTrace();
-		} // try
-	} // main
-} // class ContadorSql
+		}
+	}
+}
