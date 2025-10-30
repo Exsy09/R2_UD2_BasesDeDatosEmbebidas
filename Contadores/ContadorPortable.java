@@ -12,11 +12,13 @@ public class ContadorPortable {
         Properties props = new Properties();
         String dbPath = "";
 
-        // -----------------------------------------------------------
-        // Leemos la configuración de la base de datos desde config.properties
+     // Leemos la configuración de la base de datos desde config.properties
         // Esto permite que el proyecto sea portable y la ruta del fichero
         // se pueda modificar sin recompilar.
-        // -----------------------------------------------------------
+		// lo que se veria dentro del config.properties seria:
+		// db.path=contadores.db nada mas .
+		// El fichero config.properties debe estar en el mismo directorio
+		// desde el que se ejecuta el programa y introduce la ruta del fichero contadores.db
         try (FileInputStream fis = new FileInputStream("config.properties")) {
             props.load(fis);
             dbPath = props.getProperty("db.path"); // ruta del fichero .db
@@ -27,7 +29,6 @@ public class ContadorPortable {
 
         String url = "jdbc:sqlite:" + dbPath; // JDBC URL para SQLite
 
-        // -----------------------------------------------------------
         // SQL directo: incremento atómico
         // Razones por las que se ha elegido esta versión:
         // 1. Eficiencia: cada iteración solo ejecuta un UPDATE,
@@ -38,19 +39,18 @@ public class ContadorPortable {
         // 3. Portabilidad: funciona igual en SQLite y Derby, no depende
         //    de FOR UPDATE ni ResultSet updatable.
         // 4. Simplicidad: código compacto y fácil de empaquetar como JAR.
-        // -----------------------------------------------------------
+        
         String sqlIncremento = "UPDATE contadores SET cuenta = cuenta + 1 WHERE nombre = 'contador1'";
 
         try (Connection connection = DriverManager.getConnection(url)) {
             connection.setAutoCommit(false); // control manual de transacciones
-
-            // -----------------------------------------------------------
+           
             // Inicialización de la base de datos
             // Si la tabla no existe, se crea automáticamente.
             // Si la fila del contador no existe, se inserta con valor inicial 0.
             // Esto permite ejecutar el proyecto en cualquier máquina
             // sin requerir preparación previa de la DB.
-            // -----------------------------------------------------------
+        
             connection.createStatement().execute(
                 "CREATE TABLE IF NOT EXISTS contadores (" +
                 "nombre TEXT PRIMARY KEY," +
@@ -63,13 +63,12 @@ public class ContadorPortable {
 
             PreparedStatement incremento = connection.prepareStatement(sqlIncremento);
 
-            // -----------------------------------------------------------
             // Bucle principal de incremento
             // Cada iteración:
             // - ejecuta el UPDATE atómico
             // - confirma la transacción (commit)
             // Esto asegura consistencia y rendimiento, evitando rollback
-            // -----------------------------------------------------------
+        
             for (int i = 0; i < 1000; i++) {
                 incremento.executeUpdate();
                 connection.commit();
@@ -82,3 +81,4 @@ public class ContadorPortable {
         }
     }
 }
+
