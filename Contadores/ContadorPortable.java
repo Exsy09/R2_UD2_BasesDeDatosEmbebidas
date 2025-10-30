@@ -18,7 +18,8 @@ public class ContadorPortable {
 		// lo que se veria dentro del config.properties seria:
 		// db.path=contadores.db nada mas .
 		// El fichero config.properties debe estar en el mismo directorio
-		// desde el que se ejecuta el programa y introduce la ruta del fichero contadores.db
+		// desde el que se ejecuta el programa y 
+		// introduce la ruta del fichero nombreDDBB.db
         try (FileInputStream fis = new FileInputStream("config.properties")) {
             props.load(fis);
             dbPath = props.getProperty("db.path"); // ruta del fichero .db
@@ -81,4 +82,5 @@ public class ContadorPortable {
         }
     }
 }
+
 
