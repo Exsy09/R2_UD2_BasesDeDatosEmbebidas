@@ -1,9 +1,10 @@
+package SQLite;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 
 public class ContadorEnBD {
 
@@ -13,9 +14,13 @@ public class ContadorEnBD {
 		final String claveContador = "contador1";
 
 		try {
-			Connection connection = DriverManager.getConnection("jdbc:mariadb://localhost:3306/contadores",
-					"contadores", "987654321");
-			PreparedStatement consulta = connection.prepareStatement(sqlConsulta);
+            Class.forName("org.sqlite.JDBC");
+
+//			Connection connection = DriverManager.getConnection("jdbc:mariadb://localhost:3306/contadores",
+//					"contadores", "987654321");
+            Connection connection = DriverManager.getConnection("jdbc:sqlite:/home/alumno/bbdd/sqlite/contadores.db");
+
+            PreparedStatement consulta = connection.prepareStatement(sqlConsulta);
 			PreparedStatement actualización = connection.prepareStatement(sqlActualización);
 			int cuenta = 0;
 
@@ -26,7 +31,7 @@ public class ContadorEnBD {
 				if (res.next()) {
 					cuenta = res.getInt(1) + 1;
 					actualización.setInt(1, cuenta);
-					actualización.executeQuery();
+					actualización.executeUpdate();
 				}
 				// else break;
 				else
